@@ -6,6 +6,6 @@
   "dependencies": {
     "express": "*",
     "node-json-db": "^0.4.6",
-    "socket.io": "*"
+    "ws": "*"
   }
 }

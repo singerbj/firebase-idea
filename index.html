@@ -2,38 +2,59 @@
 <html>
 
 <head>
-    <title>VagrantRestServ</title>
+    <title>firebase-idea</title>
 </head>
 
 <body>
     Hello world!
-    <input id="userInput"/>
+    <input id="userInput" />
     <button id="userBtn">Send User</button>
-    <input id="likeInput"/>
+    <input id="likeInput" />
     <button id="likeBtn">Send Message</button>
 
     <div id="feed"></div>
 
     <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        var socket = io.connect('http://localhost');
-        socket.on('msg', function(msg) {
-            console.log(msg);
-            $('#feed').append(msg + "<br>")
-        });
+        var ws;
+        var timerID;
+        var start = function(websocketServerLocation) {
+            if (ws) {
+                window.ws.close();
+                delete window.ws;
+            }
+            ws = new WebSocket(websocketServerLocation);
+            ws.onopen = function() {
+                if (timerID) {
+                    window.clearInterval(timerID);
+                    timerID = 0;
+                }
+                $('#feed').append('websocket opened<br>');
+            };
+            ws.onclose = function() {
+                $('#feed').append('<br><br><span class="error">websocket closed</span><br>');
+                if (!timerID) {
+                    timerID = setInterval(function() {
+                        start(websocketServerLocation)
+                    }, 2000);
+                }
+            }
 
-        var userBtn = $('#userBtn');
-        var userInput = $('#userInput');
-        userBtn.click(function(){
-            io.emit('user', userInput.val());
-        });
+            ws.onmessage = function(m) {
+                $('#feed').append(m.data + "<br>");
+            };
 
-        var likeBtn = $('#likeBtn');
-        var likeInput = $('#likeInput');
-        likeBtn.click(function(){
-            io.emit('like', likeInput.val());
-        });
+            $('#userBtn').click(function(){
+                ws.send("user: " + $('#userInput').val());
+                $('#userInput').val('');
+            });
+
+            $('#likeBtn').click(function(){
+                ws.send("like: " + $('#likeInput').val());
+                $('#likeInput').val('');
+            });
+        };
+        start('ws://' + window.location.hostname + ":8081");
     </script>
 </body>
 
