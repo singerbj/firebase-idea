@@ -1,0 +1,11 @@
+{
+  "name": "firebase-idea",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "*",
+    "node-json-db": "^0.4.6",
+    "socket.io": "*"
+  }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>VagrantRestServ</title>
+</head>
+
+<body>
+    Hello world!
+    <input id="userInput"/>
+    <button id="userBtn">Send User</button>
+    <input id="likeInput"/>
+    <button id="likeBtn">Send Message</button>
+
+    <div id="feed"></div>
+
+    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://localhost');
+        socket.on('msg', function(msg) {
+            console.log(msg);
+            $('#feed').append(msg + "<br>")
+        });
+
+        var userBtn = $('#userBtn');
+        var userInput = $('#userInput');
+        userBtn.click(function(){
+            io.emit('user', userInput.val());
+        });
+
+        var likeBtn = $('#likeBtn');
+        var likeInput = $('#likeInput');
+        likeBtn.click(function(){
+            io.emit('like', likeInput.val());
+        });
+    </script>
+</body>
+
+</html>
