@@ -1,60 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="app">
 
 <head>
     <title>firebase-idea</title>
 </head>
 
-<body>
+<body ng-controller="Controller as c">
     Hello world!
     <input id="userInput" />
     <button id="userBtn">Send User</button>
     <input id="likeInput" />
     <button id="likeBtn">Send Message</button>
-
+    <h4>Users</h4>
+    <table>
+        <tr>
+            <td>
+                ID
+            </td>
+            <td>
+                Content
+            </td>
+        </tr>
+        <tr ng-repeat="(id, user) in c.data.users">
+            <td>
+                {{ id }}
+            </td>
+            <td>
+                {{ user.content }}
+            </td>
+        </tr>
+    </table>
+    <h4>Likes</h4>
+    <table>
+        <tr>
+            <td>
+                ID
+            </td>
+            <td>
+                Content
+            </td>
+        </tr>
+        <tr ng-repeat="(id, like) in c.data.likes">
+            <td>
+                {{ id }}
+            </td>
+            <td>
+                {{ like.content }}
+            </td>
+        </tr>
+    </table>
     <div id="feed"></div>
 
     <script type="text/javascript" src="//code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.4/angular.min.js"></script>
     <script>
-        var ws;
-        var timerID;
-        var start = function(websocketServerLocation) {
-            if (ws) {
-                window.ws.close();
-                delete window.ws;
-            }
-            ws = new WebSocket(websocketServerLocation);
-            ws.onopen = function() {
-                if (timerID) {
-                    window.clearInterval(timerID);
-                    timerID = 0;
+        var app = angular.module('app', []);
+
+        app.controller('Controller', ["$scope", "$http", function($scope, $http) {
+            var self = this;
+            var ws;
+            var timerID;
+            var start = function(websocketServerLocation) {
+                if (ws) {
+                    window.ws.close();
+                    delete window.ws;
                 }
-                $('#feed').append('websocket opened<br>');
+                ws = new WebSocket(websocketServerLocation);
+                ws.onopen = function() {
+                    if (timerID) {
+                        window.clearInterval(timerID);
+                        timerID = 0;
+                    }
+                    $('#feed').append('websocket opened<br>');
+                };
+                ws.onclose = function() {
+                    $('#feed').append('<br><br><span class="error">websocket closed</span><br>');
+                    if (!timerID) {
+                        timerID = setInterval(function() {
+                            start(websocketServerLocation)
+                        }, 2000);
+                    }
+                };
+
+                ws.onmessage = function(m) {
+                    self.data = JSON.parse(m.data);
+                    $scope.$apply();
+                };
+
+                $('#userBtn').click(function(){
+                    var msg = {
+                        type: 'user',
+                        content: $('#userInput').val()
+                    };
+                    ws.send(JSON.stringify(msg));
+                    $('#userInput').val('');
+                });
+
+                $('#likeBtn').click(function(){
+                    var msg = {
+                        type: 'like',
+                        content: $('#likeInput').val()
+                    };
+                    ws.send(JSON.stringify(msg));
+                    $('#likeInput').val('');
+                });
+
+                ws.onopen = function(){
+                    ws.send('{}');
+                };
             };
-            ws.onclose = function() {
-                $('#feed').append('<br><br><span class="error">websocket closed</span><br>');
-                if (!timerID) {
-                    timerID = setInterval(function() {
-                        start(websocketServerLocation)
-                    }, 2000);
-                }
-            }
-
-            ws.onmessage = function(m) {
-                $('#feed').append(m.data + "<br>");
-            };
-
-            $('#userBtn').click(function(){
-                ws.send("user: " + $('#userInput').val());
-                $('#userInput').val('');
-            });
-
-            $('#likeBtn').click(function(){
-                ws.send("like: " + $('#likeInput').val());
-                $('#likeInput').val('');
-            });
-        };
-        start('ws://' + window.location.hostname + ":8081");
+            start('ws://' + window.location.hostname + ":8081");
+        }]);
     </script>
 </body>
 
